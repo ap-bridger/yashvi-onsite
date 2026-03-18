@@ -1,16 +1,26 @@
 import { greetings } from "@/server/modules/greet/api";
+import { getApprovedTransactions } from "@/server/modules/txns/api";
 import { createSchema, createYoga } from "graphql-yoga";
 
 const { handleRequest } = createYoga({
   schema: createSchema({
     typeDefs: /* GraphQL */ `
+      type ApprovedTransaction {
+        id: String!
+        amount: Float!
+        status: String!
+        date: String!
+      }
+
       type Query {
         greetings: String
+        getApprovedTransactions: [ApprovedTransaction!]!
       }
     `,
     resolvers: {
       Query: {
         greetings,
+        getApprovedTransactions,
       },
     },
   }),
