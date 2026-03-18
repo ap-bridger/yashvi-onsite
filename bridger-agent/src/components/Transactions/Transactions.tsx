@@ -1,10 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ApolloProvider, useQuery } from "@apollo/client";
-import { apolloClient } from "@/client/graphql/apollo-client";
-import { GET_TRANSACTIONS } from "@/app/txns/api/txns.api";
-import { Category } from "./Category";
+import { useQuery } from "@apollo/client";
+import { GET_CATEGORIES, GET_TRANSACTIONS } from "@/app/txns/api/txns.api";
 
 type Transaction = {
   id: string;
@@ -76,11 +74,14 @@ const categoryChipClasses = (category: string) => {
   }
 };
 
-function TransactionsTable() {
-  const { data, loading, error } = useQuery(GET_TRANSACTIONS);
+function TransactionsTable({ clientId }: { clientId: string }) {
+  const { data, loading, error } = useQuery(GET_TRANSACTIONS, {
+    variables: { clientId },
+  });
+  const {data: categoriesData, loading: categoriesLoading, error: categoriesError} = useQuery(GET_CATEGORIES, { variables: { clientId } });
   const [categoryFilter, setCategoryFilter] = React.useState<string>("all");
 
-  if (loading) {
+  if (loading || categoriesLoading) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-4 text-sm text-slate-600">
         Loading transactions...
@@ -88,10 +89,10 @@ function TransactionsTable() {
     );
   }
 
-  if (error) {
+  if (error || categoriesError) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-4 text-sm text-rose-600">
-        Error: {error.message}
+        Error: {error?.message || categoriesError?.message}
       </div>
     );
   }
@@ -220,10 +221,8 @@ function TransactionsTable() {
   );
 }
 
-export const Transactions = () => {
+export const Transactions = ({ clientId }: { clientId: string }) => {
   return (
-    <ApolloProvider client={apolloClient}>
-      <TransactionsTable />
-    </ApolloProvider>
+    <TransactionsTable clientId={clientId} />
   );
 };
