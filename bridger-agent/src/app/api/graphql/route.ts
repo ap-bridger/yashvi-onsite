@@ -1,5 +1,5 @@
 import { greetings } from "@/server/modules/greet/api";
-import { getApprovedTransactions } from "@/server/modules/txns/api";
+import { getTransactions } from "@/server/modules/txns/api";
 import { createSchema, createYoga } from "graphql-yoga";
 
 const { handleRequest } = createYoga({
@@ -7,9 +7,17 @@ const { handleRequest } = createYoga({
     typeDefs: /* GraphQL */ `
       type Transaction {
         id: String!
+        clientId: String!
+        qbId: String
+        accountId: String
         amount: Float!
-        status: String!
-        date: String!
+        createdAt: String!
+        bankDesc: String!
+        vendor: String
+        categoryId: String
+        confidenceCategory: Float
+        confidenceVendor: Float
+        reviewStatus: String!
       }
 
       type Query {
@@ -20,7 +28,7 @@ const { handleRequest } = createYoga({
     resolvers: {
       Query: {
         greetings,
-        getTransactions: getApprovedTransactions,
+        getTransactions,
       },
     },
   }),
