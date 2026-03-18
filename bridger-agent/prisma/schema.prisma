@@ -14,7 +14,7 @@ model Greet {
 
 model Transaction {
   id                  String   @id @default(uuid())
-  clientId            String
+  clientId            String   @map("client_id")
   qbId                String?  @map("qb_id")
   accountId           String?  @map("account_id")
   amount              Float
