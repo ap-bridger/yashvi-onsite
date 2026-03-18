@@ -53,7 +53,11 @@ export const Sidebar = () => {
       href: base ? `${base}/transactions` : "/transactions",
       icon: <CoinsIcon />,
     },
-    { label: "Forecast", href: base ? `${base}/forecast` : "/forecast", icon: <EyeIcon /> },
+    {
+      label: "Forecast",
+      href: base ? `${base}/forecast` : "/forecast",
+      icon: <EyeIcon />,
+    },
   ];
 
   const servicesItems = [
