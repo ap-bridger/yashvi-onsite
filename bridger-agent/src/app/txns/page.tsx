@@ -2,12 +2,12 @@
 
 import { apolloClient } from "@/client/graphql/apollo-client";
 import { ApolloProvider, useQuery } from "@apollo/client";
-import { GET_APPROVED_TRANSACTIONS } from "./api/txns.api";
+import { GET_TRANSACTIONS } from "./api/txns.api";
 
 
 
 function TransactionsList() {
-  const { data, loading, error } = useQuery(GET_APPROVED_TRANSACTIONS);
+  const { data, loading, error } = useQuery(GET_TRANSACTIONS);
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
