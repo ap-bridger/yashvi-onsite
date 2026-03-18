@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/db";
 import { TransactionReviewStatus } from "./types";
 
-export const getTransactions = async () => {
-  return prisma.transaction.findMany();
+export const getTransactions = async (
+  _: unknown,
+  args: { clientId: string }
+) => {
+  return prisma.transaction.findMany({
+    where: { clientId: args.clientId },
+  });
 };
 
 export const approveTransaction = async (
@@ -21,4 +26,15 @@ export const approveTransaction = async (
         : TransactionReviewStatus.APPROVED,
     },
   });
+};
+
+export const getCategories = async (
+  _: unknown,
+  args: { clientId: string }
+) => {
+  const clientCategories = await prisma.clientCategory.findMany({
+    where: { clientId: args.clientId },
+    include: { category: true },
+  });
+  return clientCategories.map((cc) => cc.category);
 };
