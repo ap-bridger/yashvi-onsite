@@ -5,7 +5,7 @@ import { createSchema, createYoga } from "graphql-yoga";
 const { handleRequest } = createYoga({
   schema: createSchema({
     typeDefs: /* GraphQL */ `
-      type ApprovedTransaction {
+      type Transaction {
         id: String!
         amount: Float!
         status: String!
@@ -14,13 +14,13 @@ const { handleRequest } = createYoga({
 
       type Query {
         greetings: String
-        getApprovedTransactions: [ApprovedTransaction!]!
+        getTransactions: [Transaction!]!
       }
     `,
     resolvers: {
       Query: {
         greetings,
-        getApprovedTransactions,
+        getTransactions: getApprovedTransactions,
       },
     },
   }),

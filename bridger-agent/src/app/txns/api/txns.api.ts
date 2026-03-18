@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
-export const GET_APPROVED_TRANSACTIONS = gql`
-  query GetApprovedTransactions {
-    getApprovedTransactions {
+export const GET_TRANSACTIONS = gql`
+  query GetTransactions {
+    getTransactions {
       id
       amount
       status
