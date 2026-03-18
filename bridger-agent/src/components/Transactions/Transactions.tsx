@@ -22,26 +22,18 @@ const formatAmount = (amount: number) => {
   }).format(amount);
 };
 
-const categoryLabel = (categoryId: string | null) => {
+type Category = {
+  id: string;
+  name: string;
+  description: string | null;
+};
+
+const categoryLabel = (
+  categoryId: string | null,
+  categoryMap: Map<string, string>
+) => {
   if (!categoryId) return "Uncategorized";
-
-  const c = categoryId.toLowerCase();
-  if (c.includes("dining") || c.includes("drink") || c.includes("restaurant")) {
-    return "Drinks & dining";
-  }
-  if (c.includes("grocery") || c.includes("food")) return "Groceries";
-  if (c.includes("transport") || c.includes("auto") || c.includes("commute")) {
-    return "Auto & transport";
-  }
-  if (
-    c.includes("transfer") ||
-    c.includes("deposit") ||
-    c.includes("payment")
-  ) {
-    return "Transfer";
-  }
-
-  return categoryId;
+  return categoryMap.get(categoryId) ?? categoryId;
 };
 
 const categoryChipClasses = (category: string) => {
@@ -97,9 +89,12 @@ function TransactionsTable({ clientId }: { clientId: string }) {
     );
   }
 
+  const categories = (categoriesData?.getCategories ?? []) as Category[];
+  const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
+
   const txns = (data?.getTransactions ?? []) as Transaction[];
   const filteredTxns = txns.filter((t) => {
-    const cat = categoryLabel(t.categoryId);
+    const cat = categoryLabel(t.categoryId, categoryMap);
     return categoryFilter === "all" || cat === categoryFilter;
   });
 
@@ -151,7 +146,7 @@ function TransactionsTable({ clientId }: { clientId: string }) {
                 </tr>
               ) : (
                 sectionTxns.map((txn) => {
-                  const cat = categoryLabel(txn.categoryId);
+                  const cat = categoryLabel(txn.categoryId, categoryMap);
                   const cls = categoryChipClasses(cat);
 
                   return (
