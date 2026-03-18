@@ -9,4 +9,5 @@ datasource db {
 
 model Greet {
   id Int @id @default(autoincrement())
+  name String?
 }
