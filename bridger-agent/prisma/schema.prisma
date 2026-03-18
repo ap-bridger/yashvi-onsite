@@ -24,7 +24,7 @@ model Transaction {
   category            String?  @map("category")
   confidenceCategory  Float?   @map("confidence_category")
   confidenceVendor    Float?   @map("confidence_vendor")
-  reviewStatus        ReviewStatus @default(NONE) @map("review_status")
+  reviewStatus        String @default("NONE") @map("review_status")
 
   // Relations
   client            Client   @relation(fields: [clientId], references: [id])
@@ -62,10 +62,4 @@ model ClientCategory {
   category   Category @relation(fields: [categoryId], references: [id])
 
   @@id([clientId, categoryId])
-}
-
-enum ReviewStatus {
-  NONE
-  APPROVED
-  UPDATED
 }
