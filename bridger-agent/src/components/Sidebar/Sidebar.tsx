@@ -16,9 +16,10 @@ interface Props {
   icon: React.ReactNode;
   label: string;
   active: boolean;
+  className?: string;
 }
 
-const SidebarLink = ({ href, icon, label, active }: Props) => {
+const SidebarLink = ({ href, icon, label, active, className }: Props) => {
   return (
     <Link
       key={href}
@@ -29,6 +30,7 @@ const SidebarLink = ({ href, icon, label, active }: Props) => {
           "bg-slate-200 text-slate-900": active,
           "text-slate-700 hover:bg-slate-100": !active,
         },
+        className,
       )}
     >
       <span className={active ? "text-slate-900" : "text-slate-700"}>
@@ -104,6 +106,7 @@ export const Sidebar = () => {
         icon={<GearIcon />}
         label="Settings"
         active={isActive("/settings")}
+        className="absolute bottom-5 left-5"
       />
     </aside>
   );
