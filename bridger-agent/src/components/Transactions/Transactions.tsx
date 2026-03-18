@@ -1,8 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "@apollo/client";
-import { GET_CATEGORIES, GET_TRANSACTIONS } from "@/app/txns/api/txns.api";
+import { useMutation, useQuery } from "@apollo/client";
+import {
+  APPROVE_TRANSACTION,
+  GET_CATEGORIES,
+  GET_TRANSACTIONS,
+} from "@/app/txns/api/txns.api";
+import { Category, type CategoryOption } from "./Category";
 
 type Transaction = {
   id: string;
@@ -20,6 +25,10 @@ const formatAmount = (amount: number) => {
     currency: "USD",
     maximumFractionDigits: 2,
   }).format(amount);
+};
+
+const formatDate = (date: string) => {
+  return date;
 };
 
 const categoryLabel = (categoryId: string | null) => {
@@ -75,11 +84,57 @@ const categoryChipClasses = (category: string) => {
 };
 
 function TransactionsTable({ clientId }: { clientId: string }) {
-  const { data, loading, error } = useQuery(GET_TRANSACTIONS, {
+  const { data, loading, error, refetch } = useQuery(GET_TRANSACTIONS, {
     variables: { clientId },
   });
-  const {data: categoriesData, loading: categoriesLoading, error: categoriesError} = useQuery(GET_CATEGORIES, { variables: { clientId } });
+  const {
+    data: categoriesData,
+    loading: categoriesLoading,
+    error: categoriesError,
+  } = useQuery(GET_CATEGORIES, { variables: { clientId } });
+
+  type CategoryItem = { id: string; name: string; description?: string };
+  const categories = (categoriesData?.getCategories ?? []) as CategoryItem[];
+
+  const categoryNameById = (categoryId: string | null) => {
+    if (!categoryId) return "Uncategorized";
+    return (
+      categories.find((c) => c.id === categoryId)?.name ??
+      categoryLabel(categoryId)
+    );
+  };
+
   const [categoryFilter, setCategoryFilter] = React.useState<string>("all");
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const [selectedTxn, setSelectedTxn] = React.useState<Transaction | null>(
+    null,
+  );
+  const [draftCategoryId, setDraftCategoryId] = React.useState<string | null>(
+    null,
+  );
+  const [draftVendor, setDraftVendor] = React.useState<string>("");
+  const [saving, setSaving] = React.useState(false);
+  const [drawerError, setDrawerError] = React.useState<string | null>(null);
+
+  const [approveTransaction] = useMutation(APPROVE_TRANSACTION);
+
+  const categoryFilterOptions: CategoryOption[] = [
+    { value: "all", label: "All categories" },
+    { value: "__uncategorized__", label: "Uncategorized" },
+    ...categories.map((c) => ({ value: c.id, label: c.name })),
+  ];
+
+  const drawerCategoryOptions: CategoryOption[] = [
+    { value: "__uncategorized__", label: "Uncategorized" },
+    ...categories.map((c) => ({ value: c.id, label: c.name })),
+  ];
+
+  React.useEffect(() => {
+    if (!selectedTxn) return;
+    setDrawerError(null);
+    setDraftCategoryId(selectedTxn.categoryId);
+    setDraftVendor(selectedTxn.vendor ?? "");
+  }, [selectedTxn]);
 
   if (loading || categoriesLoading) {
     return (
@@ -99,8 +154,9 @@ function TransactionsTable({ clientId }: { clientId: string }) {
 
   const txns = (data?.getTransactions ?? []) as Transaction[];
   const filteredTxns = txns.filter((t) => {
-    const cat = categoryLabel(t.categoryId);
-    return categoryFilter === "all" || cat === categoryFilter;
+    if (categoryFilter === "all") return true;
+    if (categoryFilter === "__uncategorized__") return t.categoryId == null;
+    return t.categoryId === categoryFilter;
   });
 
   const approvedTxns = filteredTxns.filter(
@@ -108,14 +164,58 @@ function TransactionsTable({ clientId }: { clientId: string }) {
   );
   const pendingTxns = filteredTxns.filter((t) => t.reviewStatus !== "APPROVED");
 
+  const closeDrawer = async () => {
+    if (!selectedTxn) {
+      setDrawerOpen(false);
+      return;
+    }
+
+    const nextVendor = draftVendor.trim() === "" ? null : draftVendor.trim();
+    const nextCategoryId =
+      draftCategoryId === "__uncategorized__" ? null : draftCategoryId;
+
+    const vendorDirty = nextVendor !== selectedTxn.vendor;
+    const categoryDirty = nextCategoryId !== selectedTxn.categoryId;
+    const shouldUpdate = vendorDirty || categoryDirty;
+
+    try {
+      if (shouldUpdate) {
+        setSaving(true);
+        setDrawerError(null);
+
+        await approveTransaction({
+          variables: {
+            id: selectedTxn.id,
+            vendor: nextVendor,
+            categoryId: nextCategoryId,
+          },
+        });
+
+        await refetch();
+      }
+    } catch (e) {
+      setDrawerError(
+        e instanceof Error ? e.message : "Failed to update transaction",
+      );
+      setSaving(false);
+      return;
+    }
+
+    setSaving(false);
+    setDrawerOpen(false);
+    setSelectedTxn(null);
+  };
+
   const TransactionsSection = ({
     title,
     sectionTxns,
     emptyMessage,
+    onRowClick,
   }: {
     title: string;
     sectionTxns: Transaction[];
     emptyMessage: string;
+    onRowClick: (txn: Transaction) => void;
   }) => {
     return (
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -151,13 +251,22 @@ function TransactionsTable({ clientId }: { clientId: string }) {
                 </tr>
               ) : (
                 sectionTxns.map((txn) => {
-                  const cat = categoryLabel(txn.categoryId);
-                  const cls = categoryChipClasses(cat);
+                  const catName = categoryNameById(txn.categoryId);
+                  const cls = categoryChipClasses(catName);
 
                   return (
                     <tr
                       key={txn.id}
-                      className="border-t border-slate-100 hover:bg-slate-50"
+                      className="border-t border-slate-100 hover:bg-slate-50 cursor-pointer"
+                      onClick={() => onRowClick(txn)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onRowClick(txn);
+                        }
+                      }}
                     >
                       <td className="px-4 py-3 text-sm text-slate-900">
                         <div className="leading-snug">{txn.bankDesc}</div>
@@ -186,7 +295,7 @@ function TransactionsTable({ clientId }: { clientId: string }) {
                               " ",
                             )}
                           />
-                          {cat}
+                          {catName}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
@@ -206,23 +315,144 @@ function TransactionsTable({ clientId }: { clientId: string }) {
   };
 
   return (
-    <div className="space-y-6">
-      <TransactionsSection
-        title="Pending"
-        sectionTxns={pendingTxns}
-        emptyMessage="No pending transactions."
-      />
-      <TransactionsSection
-        title="Approved"
-        sectionTxns={approvedTxns}
-        emptyMessage="No approved transactions."
-      />
-    </div>
+    <>
+      {drawerOpen && selectedTxn ? (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-slate-900/20"
+            onClick={() => void closeDrawer()}
+          />
+          <aside className="absolute right-0 top-0 h-full w-[440px] bg-white shadow-2xl border-l border-slate-200 overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">
+                    Transaction details
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {selectedTxn.id}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void closeDrawer()}
+                  disabled={saving}
+                  className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-5 rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Bank</p>
+                  <p className="text-sm text-slate-900">
+                    {selectedTxn.bankDesc}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">Amount</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {formatAmount(selectedTxn.amount)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">Date</p>
+                    <p className="text-sm text-slate-900">
+                      {formatDate(selectedTxn.createdAt)}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-slate-500">Status</p>
+                  <p className="text-sm text-slate-900">
+                    {selectedTxn.reviewStatus}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-slate-500 mb-2">
+                    Category
+                  </p>
+                  <Category
+                    value={draftCategoryId ?? "__uncategorized__"}
+                    onChange={(v) =>
+                      setDraftCategoryId(v === "__uncategorized__" ? null : v)
+                    }
+                    options={drawerCategoryOptions}
+                  />
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-slate-500 mb-2">
+                    Vendor
+                  </p>
+                  <input
+                    value={draftVendor}
+                    onChange={(e) => setDraftVendor(e.target.value)}
+                    className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-800 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-100"
+                    placeholder="Enter vendor"
+                  />
+                </div>
+
+                {drawerError ? (
+                  <div className="text-sm text-rose-600">{drawerError}</div>
+                ) : null}
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => void closeDrawer()}
+                  disabled={saving}
+                  className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                >
+                  {saving ? "Saving..." : "Close & update"}
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      <div className="space-y-6">
+        <div className="flex items-center justify-end gap-3">
+          <span className="text-sm font-medium text-slate-600">Category</span>
+          <div className="w-56">
+            <Category
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              options={categoryFilterOptions}
+            />
+          </div>
+        </div>
+
+        <TransactionsSection
+          title="Pending"
+          sectionTxns={pendingTxns}
+          emptyMessage="No pending transactions."
+          onRowClick={(txn) => {
+            setSelectedTxn(txn);
+            setDrawerOpen(true);
+          }}
+        />
+        <TransactionsSection
+          title="Approved"
+          sectionTxns={approvedTxns}
+          emptyMessage="No approved transactions."
+          onRowClick={(txn) => {
+            setSelectedTxn(txn);
+            setDrawerOpen(true);
+          }}
+        />
+      </div>
+    </>
   );
 }
 
 export const Transactions = ({ clientId }: { clientId: string }) => {
-  return (
-    <TransactionsTable clientId={clientId} />
-  );
+  return <TransactionsTable clientId={clientId} />;
 };

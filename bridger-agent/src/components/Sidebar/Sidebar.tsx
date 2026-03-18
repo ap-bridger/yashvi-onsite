@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 
 interface Props {
   href: string;
@@ -43,14 +43,26 @@ const SidebarLink = ({ href, icon, label, active, className }: Props) => {
 
 export const Sidebar = () => {
   const pathname = usePathname();
+  const { clientId } = useParams<{ clientId?: string }>();
+  const base = clientId ? `/${clientId}` : "";
 
   const trackItems = [
-    { label: "Overview", href: "/", icon: <HouseIcon /> },
-    { label: "Transactions", href: "/transactions", icon: <CoinsIcon /> },
-    { label: "Forecast", href: "/forecast", icon: <EyeIcon /> },
+    { label: "Overview", href: base || "/", icon: <HouseIcon /> },
+    {
+      label: "Transactions",
+      href: base ? `${base}/transactions` : "/transactions",
+      icon: <CoinsIcon />,
+    },
+    { label: "Forecast", href: base ? `${base}/forecast` : "/forecast", icon: <EyeIcon /> },
   ];
 
-  const servicesItems = [{ label: "Tax", href: "/tax", icon: <ScrollIcon /> }];
+  const servicesItems = [
+    {
+      label: "Tax",
+      href: base ? `${base}/tax` : "/tax",
+      icon: <ScrollIcon />,
+    },
+  ];
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -102,10 +114,10 @@ export const Sidebar = () => {
       </div>
 
       <SidebarLink
-        href="/settings"
+        href={base ? `${base}/settings` : "/settings"}
         icon={<GearIcon />}
         label="Settings"
-        active={isActive("/settings")}
+        active={isActive(base ? `${base}/settings` : "/settings")}
         className="absolute bottom-5 left-5"
       />
     </aside>

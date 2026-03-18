@@ -28,3 +28,18 @@ export const GET_CATEGORIES = gql`
     }
   }
 `;
+
+export const APPROVE_TRANSACTION = gql`
+  mutation ApproveTransaction(
+    $id: String!
+    $vendor: String
+    $categoryId: String
+  ) {
+    approveTransaction(id: $id, vendor: $vendor, categoryId: $categoryId) {
+      id
+      vendor
+      categoryId
+      reviewStatus
+    }
+  }
+`;

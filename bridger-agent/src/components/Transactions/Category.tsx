@@ -20,9 +20,17 @@ type CategoryProps = {
   value?: string;
   onChange?: (value: string) => void;
   className?: string;
+  options?: CategoryOption[];
 };
 
-export const Category = ({ value, onChange, className }: CategoryProps) => {
+export const Category = ({
+  value,
+  onChange,
+  className,
+  options,
+}: CategoryProps) => {
+  const opts = options ?? CATEGORY_OPTIONS;
+
   return (
     <div className={className}>
       <select
@@ -30,7 +38,7 @@ export const Category = ({ value, onChange, className }: CategoryProps) => {
         onChange={(e) => onChange?.(e.target.value)}
         className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-800 outline-none focus:border-slate-300 focus:ring-2 focus:ring-slate-100"
       >
-        {CATEGORY_OPTIONS.map((opt) => (
+        {opts.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
           </option>
