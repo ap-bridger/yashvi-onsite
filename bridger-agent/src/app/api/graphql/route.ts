@@ -1,4 +1,4 @@
-import { approveTransaction, getTransactions } from "@/server/modules/txns/api";
+import { approveTransaction, getCategories, getTransactions } from "@/server/modules/txns/api";
 import { createSchema, createYoga } from "graphql-yoga";
 
 const { handleRequest } = createYoga({
@@ -19,8 +19,15 @@ const { handleRequest } = createYoga({
         reviewStatus: String!
       }
 
+      type Category {
+        id: String!
+        name: String!
+        description: String
+      }
+
       type Query {
-        getTransactions: [Transaction!]!
+        getTransactions(clientId: String!): [Transaction!]!
+        getCategories(clientId: String!): [Category!]!
       }
 
       type Mutation {
@@ -30,6 +37,7 @@ const { handleRequest } = createYoga({
     resolvers: {
       Query: {
         getTransactions,
+        getCategories,
       },
       Mutation: {
         approveTransaction,
