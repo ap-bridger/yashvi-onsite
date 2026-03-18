@@ -21,13 +21,17 @@ model Transaction {
   createdAt           DateTime @default(now()) @map("created_at")
   bankDesc            String   @map("bank_desc")
   vendor              String?  @map("vendor")
-  category            String?  @map("category")
+  categoryId          String?   @map("category_id")
   confidenceCategory  Float?   @map("confidence_category")
   confidenceVendor    Float?   @map("confidence_vendor")
   reviewStatus        String @default("NONE") @map("review_status")
 
   // Relations
   client            Client   @relation(fields: [clientId], references: [id])
+  clientCategory    ClientCategory? @relation(fields: [clientId, categoryId], references: [clientId, categoryId])
+
+  @@index([clientId])
+  @@index([clientId, categoryId])
 }
 
 model Client {
@@ -60,6 +64,9 @@ model ClientCategory {
   // Composite primary key for join table
   client     Client   @relation(fields: [clientId], references: [id])
   category   Category @relation(fields: [categoryId], references: [id])
+
+  // Relations
+  transactions Transaction[] 
 
   @@id([clientId, categoryId])
 }
