@@ -4,7 +4,7 @@ const path = require("path");
 
 const CATEGORIZED_PATH = path.join(
   __dirname,
-  "sample_data/sample_categorized.csv",
+  "../sample_data/sample_categorized.csv",
 );
 
 function parseCSV(text) {
