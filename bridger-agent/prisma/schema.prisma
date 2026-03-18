@@ -28,7 +28,7 @@ model Transaction {
 
   // Relations
   client            Client   @relation(fields: [clientId], references: [id])
-  clientCategory    ClientCategory? @relation(fields: [clientId, categoryId], references: [clientId, categoryId])
+  category          Category? @relation(fields: [categoryId], references: [id])
 
   @@index([clientId])
   @@index([clientId, categoryId])
@@ -53,6 +53,7 @@ model Category {
 
   // Relations
   clients     ClientCategory[]
+  transactions Transaction[] 
 }
 
 model ClientCategory {
@@ -64,9 +65,6 @@ model ClientCategory {
   // Composite primary key for join table
   client     Client   @relation(fields: [clientId], references: [id])
   category   Category @relation(fields: [categoryId], references: [id])
-
-  // Relations
-  transactions Transaction[] 
 
   @@id([clientId, categoryId])
 }
