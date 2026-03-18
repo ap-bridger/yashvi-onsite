@@ -11,3 +11,61 @@ model Greet {
   id Int @id @default(autoincrement())
   name String?
 }
+
+model Transaction {
+  id                  String   @id @default(uuid())
+  clientId            String
+  qbId                String?  @map("qb_id")
+  accountId           String?  @map("account_id")
+  amount              Float
+  createdAt           DateTime @default(now()) @map("created_at")
+  bankDesc            String   @map("bank_desc")
+  vendor              String?  @map("vendor")
+  category            String?  @map("category")
+  confidenceCategory  Float?   @map("confidence_category")
+  confidenceVendor    Float?   @map("confidence_vendor")
+  reviewStatus        ReviewStatus @default(NONE) @map("review_status")
+
+  // Relations
+  client            Client   @relation(fields: [clientId], references: [id])
+}
+
+model Client {
+  id                String   @id @default(uuid())
+  name              String
+  description       String?
+  joinedAt          DateTime @default(now()) @map("joined_at")
+  confidenceThreshold Float    @map("confidence_setting")
+
+  // Relations
+  transactions      Transaction[]
+  categories        ClientCategory[]
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+
+  // Relations
+  clients     ClientCategory[]
+}
+
+model ClientCategory {
+  clientId   String   @map("client_id")
+  categoryId String   @map("category_id")
+  addedAt    DateTime @default(now()) @map("added_at")
+  removedAt  DateTime? @map("removed_at")
+
+  // Composite primary key for join table
+  client     Client   @relation(fields: [clientId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([clientId, categoryId])
+}
+
+enum ReviewStatus {
+  NONE
+  APPROVED
+  UPDATED
+}
