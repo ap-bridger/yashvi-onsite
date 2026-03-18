@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/Sidebar/Sidebar";
+import { Transactions } from "@/components/Transactions/Transactions";
 
 export default function TransactionsPage() {
   return (
@@ -8,7 +9,9 @@ export default function TransactionsPage() {
         <h1 className="text-2xl font-semibold text-slate-900">
           Transactions
         </h1>
-        <p className="mt-2 text-sm text-slate-600">Coming soon</p>
+        <div className="mt-6">
+          <Transactions />
+        </div>
       </main>
     </div>
   );
